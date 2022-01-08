@@ -1,18 +1,1 @@
-[
-    {
-        "Name": "App1",
-        "Template": "app1/app1.yaml",
-        "Config": "app1/app1.json",
-        "StackID": "arn:aws:cloudformation:ca-central-1:182491688958:stack/App1-1641244963/49f73c60-6cdb-11ec-91e5-0e972d5c18b6",
-        "CurrentTemplateHash": "90381609649e6a8686945f6bfe9173169ab4a26556b275f7bdb892a8f7d62c84",
-        "CurrentConfigHash": "dc07336b1e2c842da47e00fc9050b87f59713ebacb12ca32f04000b529693ce7"
-    },
-    {
-        "Name": "App2",
-        "Template": "app2/app2.yaml",
-        "Config": "app2/app2.json",
-        "StackID": "arn:aws:cloudformation:ca-central-1:182491688958:stack/App2-1641244963/4a1e4c60-6cdb-11ec-860b-0e5ab488cb24",
-        "CurrentTemplateHash": "ff6c85e5385b31625fe3841026223237ed9bfc2964c9080112a0bafee38920cc",
-        "CurrentConfigHash": "e51168fa2f5f75a8b7035d26019714a39ed8a26f6d45c31f1168deb7d0abdf38"
-    }
-]
+[{"RepoURL":"https://github.com/craigjames16/cf-templates.git","Apps":[{"Name":"App1","Template":"/app1/app1.yaml","Config":"/app1/app1.json","StackID":"arn:aws:cloudformation:ca-central-1:182491688958:stack/App1-1641653227/da72acc0-7091-11ec-9003-02c6417028bc","CurrentTemplateHash":"90381609649e6a8686945f6bfe9173169ab4a26556b275f7bdb892a8f7d62c84","CurrentConfigHash":"4dd629fb9c32171fc8ab9e2a756dfce45fe58aabc2ad5984a5a509bb3fa937b5"},{"Name":"App2","Template":"/app2/app2.yaml","Config":"/app2/app2.json","StackID":"arn:aws:cloudformation:ca-central-1:182491688958:stack/App2-1641653228/da8dd5e0-7091-11ec-a18c-0ab5fb8097f2","CurrentTemplateHash":"ff6c85e5385b31625fe3841026223237ed9bfc2964c9080112a0bafee38920cc","CurrentConfigHash":"e51168fa2f5f75a8b7035d26019714a39ed8a26f6d45c31f1168deb7d0abdf38"}]}]
