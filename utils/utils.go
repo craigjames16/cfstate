@@ -7,9 +7,7 @@ import (
 )
 
 func GetFileData(filePath string) (fileData []byte, err error) {
-	var repoPath string = "/home/craigjames/Repos/cf-templates/"
-
-	fileData, err = os.ReadFile(fmt.Sprintf("%s%s", repoPath, filePath))
+	fileData, err = os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}

@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"github.com/craigjames16/cfstate/aws"
+	"github.com/craigjames16/cfstate/github"
 	"github.com/craigjames16/cfstate/utils"
 	"github.com/urfave/cli/v2"
 )
+
+var REPO_BASE string = "/tmp"
 
 type App struct {
 	Name                string
@@ -21,8 +24,16 @@ type App struct {
 }
 
 type AppState struct {
-	App    App
-	Status status
+	App              App
+	TemplateLocation string
+	ConfigLocation   string
+	RepoURL          string
+	Status           status
+}
+
+type Repo struct {
+	RepoURL string
+	Apps    []App
 }
 
 type status string
@@ -33,7 +44,7 @@ var (
 	Diff       status = "DIFF"
 )
 
-func getState() (apps []App, err error) {
+func getState() (repos []Repo, err error) {
 	var (
 		appsJson []byte
 	)
@@ -43,50 +54,71 @@ func getState() (apps []App, err error) {
 		return nil, err
 	}
 
-	err = json.Unmarshal(appsJson, &apps)
+	err = json.Unmarshal(appsJson, &repos)
 	if err != nil {
 		return nil, err
 	}
 
-	return apps, nil
+	return repos, nil
 }
 
-func checkState() (state []AppState, err error) {
+func checkState() (appStates []AppState, err error) {
 	var (
-		apps         []App
+		state        []Repo
 		templateHash string
 		configHash   string
+		repoLocation string
+		appState     AppState
 	)
-	apps, err = getState()
+
+	state, err = getState()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, app := range apps {
-		fmt.Println(app.StackID, app.Name)
-		if app.StackID == "" {
-			state = append(state, AppState{App: app, Status: NotCreated})
-			continue
-		}
-
-		templateHash, err = utils.GetFileHash(app.Template)
-		if err != nil {
+	for _, repo := range state {
+		if repoLocation, err = github.GetRepo(repo.RepoURL); err != nil {
 			return nil, err
 		}
 
-		configHash, err = utils.GetFileHash(app.Config)
-		if err != nil {
-			return nil, err
-		}
+		for _, app := range repo.Apps {
+			templateLocation := fmt.Sprintf("%s%s", repoLocation, app.Template)
+			configLocation := fmt.Sprintf("%s%s", repoLocation, app.Config)
 
-		if templateHash == app.CurrentTemplateHash && configHash == app.CurrentConfigHash {
-			state = append(state, AppState{App: app, Status: OK})
-		} else {
-			state = append(state, AppState{App: app, Status: Diff})
+			appState = AppState{
+				App:              app,
+				TemplateLocation: templateLocation,
+				ConfigLocation:   configLocation,
+				RepoURL:          repo.RepoURL,
+			}
+
+			if app.StackID == "" {
+				appState.Status = NotCreated
+				appStates = append(appStates, appState)
+				continue
+			}
+
+			templateHash, err = utils.GetFileHash(templateLocation)
+			if err != nil {
+				return nil, err
+			}
+
+			configHash, err = utils.GetFileHash(configLocation)
+			if err != nil {
+				return nil, err
+			}
+
+			if templateHash == app.CurrentTemplateHash && configHash == app.CurrentConfigHash {
+				appState.Status = OK
+			} else {
+				appState.Status = Diff
+			}
+
+			appStates = append(appStates, appState)
 		}
 	}
 
-	return state, nil
+	return appStates, nil
 }
 
 func CheckState(c *cli.Context) error {
@@ -117,13 +149,12 @@ func SyncState(c *cli.Context) (err error) {
 	}
 
 	for _, state := range states {
-		fmt.Println(state.App.Name, state.Status)
 		switch state.Status {
 		case NotCreated:
 			opOutput, err = aws.CreateStack(aws.AppInput{
 				Name:     state.App.Name,
-				Template: state.App.Template,
-				Config:   state.App.Config,
+				Template: state.TemplateLocation,
+				Config:   state.ConfigLocation,
 			})
 		case OK:
 			fmt.Println("OK")
@@ -131,8 +162,8 @@ func SyncState(c *cli.Context) (err error) {
 		case Diff:
 			opOutput, err = aws.UpdateStack(aws.AppInput{
 				StackID:  state.App.StackID,
-				Template: state.App.Template,
-				Config:   state.App.Config,
+				Template: state.TemplateLocation,
+				Config:   state.ConfigLocation,
 			})
 		}
 
@@ -140,17 +171,18 @@ func SyncState(c *cli.Context) (err error) {
 			return err
 		}
 
-		utils.Must(updateState(state.App, opOutput))
+		utils.Must(updateState(state, opOutput))
 
 	}
 
 	return nil
 }
 
-func updateState(app App, opOutput aws.CreateUpdateOutput) (err error) {
+func updateState(appState AppState, opOutput aws.CreateUpdateOutput) (err error) {
 	var (
-		state        []App
-		newState     []App
+		state        []Repo
+		newState     []Repo
+		newAppState  []App
 		templateHash string
 		configHash   string
 		newStateJSON []byte
@@ -159,31 +191,41 @@ func updateState(app App, opOutput aws.CreateUpdateOutput) (err error) {
 	now := time.Now()
 	sec := now.Unix()
 
-	state, err = getState()
-
-	if err != nil {
+	if state, err = getState(); err != nil {
 		return err
 	}
 
-	for _, appState := range state {
-		if appState.Name == app.Name {
-			templateHash, err = utils.GetFileHash(app.Template)
-			utils.Must(err)
+	for _, repo := range state {
+		if repo.RepoURL == appState.RepoURL {
+			for _, app := range repo.Apps {
+				if app.Name == appState.App.Name {
+					templateHash, err = utils.GetFileHash(appState.TemplateLocation)
+					utils.Must(err)
 
-			configHash, err = utils.GetFileHash(app.Config)
-			utils.Must(err)
+					configHash, err = utils.GetFileHash(appState.ConfigLocation)
+					utils.Must(err)
 
-			newState = append(newState, App{
-				Name:                appState.Name,
-				Template:            appState.Template,
-				Config:              appState.Config,
-				StackID:             opOutput.StackID,
-				CurrentTemplateHash: templateHash,
-				CurrentConfigHash:   configHash,
+					newAppState = append(newAppState, App{
+						Name:                app.Name,
+						Template:            app.Template,
+						Config:              app.Config,
+						StackID:             opOutput.StackID,
+						CurrentTemplateHash: templateHash,
+						CurrentConfigHash:   configHash,
+					})
+
+				} else {
+					newAppState = append(newAppState, app)
+				}
+			}
+
+			newState = append(newState, Repo{
+				RepoURL: repo.RepoURL,
+				Apps:    newAppState,
 			})
 
 		} else {
-			newState = append(newState, appState)
+			newState = append(newState, repo)
 		}
 
 	}
