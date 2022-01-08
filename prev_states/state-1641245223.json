@@ -1,0 +1,18 @@
+[
+    {
+        "Name": "App1",
+        "Template": "app1/app1.yaml",
+        "Config": "app1/app1.json",
+        "StackID": "arn:aws:cloudformation:ca-central-1:182491688958:stack/App1-1641244963/49f73c60-6cdb-11ec-91e5-0e972d5c18b6",
+        "CurrentTemplateHash": "90381609649e6a8686945f6bfe9173169ab4a26556b275f7bdb892a8f7d62c84",
+        "CurrentConfigHash": "dc07336b1e2c842da47e00fc9050b87f59713ebacb12ca32f04000b529693ce7"
+    },
+    {
+        "Name": "App2",
+        "Template": "app2/app2.yaml",
+        "Config": "app2/app2.json",
+        "StackID": "arn:aws:cloudformation:ca-central-1:182491688958:stack/App2-1641244963/4a1e4c60-6cdb-11ec-860b-0e5ab488cb24",
+        "CurrentTemplateHash": "ff6c85e5385b31625fe3841026223237ed9bfc2964c9080112a0bafee38920cc",
+        "CurrentConfigHash": "9219074f9300428e4aa0e716e8a6d019fa83f4b1c998010299a4e6a524650754"
+    }
+]
