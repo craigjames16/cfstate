@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
+
+	"github.com/urfave/cli/v2"
 )
 
 func GetFileData(filePath string) (fileData []byte, err error) {
@@ -38,5 +40,14 @@ func GetHash(fileData []byte) (fileHash string, err error) {
 func Must(err error) {
 	if err != nil {
 		panic(err)
+	}
+}
+
+func ExistOrPrompt(flagName string, variable *string, cliContext *cli.Context) {
+	if cliContext.String(flagName) == "" {
+		fmt.Printf("%s: ", flagName)
+		fmt.Scanln(variable)
+	} else {
+		*variable = cliContext.String(flagName)
 	}
 }
