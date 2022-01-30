@@ -30,11 +30,12 @@ func GetRepo(url string) (location string, err error) {
 		return location, fmt.Errorf("invalid repo url")
 	}
 
+	// Put in a temp location so we can download the repo then find the latest commit
 	tmpLocation = fmt.Sprintf("%s/%d", REPO_BASE, sec)
 
 	r, err = git.PlainClone(tmpLocation, false, &git.CloneOptions{
 		Auth: &http.BasicAuth{
-			Username: "abc123", // yes, this can be anything except an empty string
+			Username: "abc123", // this can be anything except an empty string
 			Password: token,
 		},
 		URL: url,
@@ -44,12 +45,13 @@ func GetRepo(url string) (location string, err error) {
 		return tmpLocation, err
 	}
 
-	// ... retrieving the branch being pointed by HEAD
+	// Retrieving the Head reference
 	if ref, err = r.Head(); err != nil {
 		fmt.Println(err)
 		return tmpLocation, err
 	}
 
+	// Put in a folder named after the HEAD commit
 	location = fmt.Sprintf("%s/%s", REPO_BASE, ref.Hash().String())
 
 	err = os.Rename(tmpLocation, location)
