@@ -8,13 +8,11 @@ import (
 	aws "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	cf "github.com/aws/aws-sdk-go/service/cloudformation"
-	s3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/craigjames16/cfstate/utils"
 )
 
 var (
 	CFService *cf.CloudFormation
-	S3Service *s3.S3
 )
 
 type AppInput struct {
