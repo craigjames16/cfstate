@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/craigjames16/cfstate/aws"
@@ -22,6 +23,14 @@ func AddApp(c *cli.Context) (err error) {
 	utils.ExistOrPrompt("template-location", &templateLocation, c)
 	utils.ExistOrPrompt("config-location", &configLocation, c)
 	utils.ExistOrPrompt("repo", &repoName, c)
+
+	if templateLocation[0:1] != "/" {
+		templateLocation = "/" + templateLocation
+	}
+
+	if configLocation[0:1] != "/" {
+		configLocation = "/" + configLocation
+	}
 
 	if state, err = getState(); err != nil {
 		return err
@@ -101,4 +110,38 @@ func CheckStatus(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func AddRepo(c *cli.Context) (err error) {
+	var (
+		repoName string
+		repoURL  string
+		state    State
+		newState State
+	)
+
+	utils.ExistOrPrompt("repo-name", &repoName, c)
+	utils.ExistOrPrompt("repo-url", &repoURL, c)
+
+	if state, err = getState(); err != nil {
+		return err
+	}
+
+	for _, repo := range state {
+		if repo.RepoName == repoName {
+			return errors.New("repo already exists")
+		}
+	}
+
+	newState = append(state, Repo{
+		RepoName: repoName,
+		RepoURL:  repoURL,
+		Apps:     []App{},
+	})
+
+	if err = updateState(newState); err != nil {
+		return err
+	}
+
+	return err
 }

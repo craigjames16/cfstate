@@ -30,13 +30,14 @@ func main() {
 				},
 			},
 			{
-				Name:  "add",
+				Name:  "app",
 				Usage: "add an app to the list",
 				Subcommands: []*cli.Command{
 					{
-						Name:    "app",
+						Name:    "add",
 						Aliases: []string{"a"},
 						Usage:   "Add application to state",
+						Action:  state.AddApp,
 						Flags: []cli.Flag{
 							&cli.StringFlag{
 								Name:  "app-name",
@@ -55,7 +56,28 @@ func main() {
 								Usage: "The name of the repo where the app is located",
 							},
 						},
-						Action: state.AddApp,
+					},
+				},
+			},
+			{
+				Name:  "repo",
+				Usage: "Repo management",
+				Subcommands: []*cli.Command{
+					{
+						Name:    "add",
+						Aliases: []string{"r"},
+						Usage:   "Add repo to state",
+						Action:  state.AddRepo,
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:  "repo-name",
+								Usage: "Application name",
+							},
+							&cli.StringFlag{
+								Name:  "repo-url",
+								Usage: "URL to repo",
+							},
+						},
 					},
 				},
 			},

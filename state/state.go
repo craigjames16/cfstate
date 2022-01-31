@@ -3,9 +3,9 @@ package state
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/craigjames16/cfstate/aws"
+	"github.com/craigjames16/cfstate/backends"
 	"github.com/craigjames16/cfstate/github"
 	"github.com/craigjames16/cfstate/utils"
 )
@@ -33,6 +33,8 @@ type Repo struct {
 	Apps     []App
 }
 
+type State []Repo
+
 type status string
 
 var (
@@ -41,12 +43,15 @@ var (
 	Diff       status = "DIFF"
 )
 
-func getState() (repos []Repo, err error) {
+func getState() (repos State, err error) {
 	var (
 		appsJson []byte
+		backend  backends.Backend
 	)
 
-	appsJson, err = aws.DownloadStateFile()
+	backend = backends.GetBackend()
+
+	appsJson, err = backend.GetState()
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +66,7 @@ func getState() (repos []Repo, err error) {
 
 func checkAppStatus() (appStatuses []AppStatus, err error) {
 	var (
-		state        []Repo
+		state        State
 		templateHash string
 		configHash   string
 		repoLocation string
@@ -120,8 +125,8 @@ func checkAppStatus() (appStatuses []AppStatus, err error) {
 
 func applyStateUpdate(appStatus AppStatus, opOutput aws.CreateUpdateOutput) (err error) {
 	var (
-		state        []Repo
-		newState     []Repo
+		state        State
+		newState     State
 		newAppState  []App
 		templateHash string
 		configHash   string
@@ -171,23 +176,15 @@ func applyStateUpdate(appStatus AppStatus, opOutput aws.CreateUpdateOutput) (err
 	return err
 }
 
-func updateState(newState []Repo) (err error) {
+func updateState(newState State) (err error) {
 	var (
 		newStateJSON []byte
+		backend      backends.Backend
 	)
 
-	now := time.Now()
-	sec := now.Unix()
+	backend = backends.GetBackend()
 
-	if err = aws.RenameObject("state.json", fmt.Sprintf("prev_states/state-%d.json", sec)); err != nil {
-		return err
-	}
-
-	if newStateJSON, err = json.Marshal(newState); err != nil {
-		return err
-	}
-
-	if err = aws.UploadObject(newStateJSON); err != nil {
+	if err = backend.UpdateState(newStateJSON); err != nil {
 		return err
 	}
 
