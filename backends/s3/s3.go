@@ -51,14 +51,16 @@ func (s3b S3Backend) NewBackend() (backend S3Backend) {
 }
 
 func (s3b S3Backend) UpdateState(stateFile []byte) (err error) {
-	now := time.Now()
-	sec := now.Unix()
-	newKey := fmt.Sprintf("prev_states/%s-%d.json", STATE_FILE_NAME, sec)
-	stateFileName := fmt.Sprintf("%s.json", STATE_FILE_NAME)
+	var (
+		now                time.Time = time.Now()
+		sec                int64     = now.Unix()
+		stateFileName      string    = fmt.Sprintf("./%s.json", STATE_FILE_NAME)
+		savedStateFileName string    = fmt.Sprintf("./prev_states/state-%d.json", sec)
+	)
 
 	if _, err = S3Service.CopyObject(&s3.CopyObjectInput{
 		Bucket:     aws.String(BUCKET_NAME),
-		Key:        aws.String(newKey),
+		Key:        aws.String(savedStateFileName),
 		CopySource: aws.String(fmt.Sprintf("%s/%s", BUCKET_NAME, stateFileName)),
 	}); err != nil {
 		return err
@@ -76,13 +78,15 @@ func (s3b S3Backend) UpdateState(stateFile []byte) (err error) {
 }
 
 func (s3b S3Backend) GetState() (output []byte, err error) {
-	// Create a file to write the S3 Object contents to.
+	var (
+		stateFileName string = fmt.Sprintf("./%s.json", STATE_FILE_NAME)
+	)
+
 	buff := &aws.WriteAtBuffer{}
 
-	// Write the contents of S3 Object to the file
 	_, err = S3Downloader.Download(buff, &s3.GetObjectInput{
 		Bucket: aws.String(BUCKET_NAME),
-		Key:    aws.String(STATE_FILE_NAME),
+		Key:    aws.String(stateFileName),
 	})
 
 	if err != nil {

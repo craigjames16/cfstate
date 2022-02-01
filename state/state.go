@@ -184,6 +184,9 @@ func updateState(newState State) (err error) {
 
 	backend = backends.GetBackend()
 
+	newStateJSON, err = json.Marshal(newState)
+	utils.Must(err)
+
 	if err = backend.UpdateState(newStateJSON); err != nil {
 		return err
 	}
