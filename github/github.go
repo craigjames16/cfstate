@@ -56,7 +56,6 @@ func GetRepo(url string) (location string, err error) {
 
 	err = os.Rename(tmpLocation, location)
 	if err != nil {
-		fmt.Println("Repo commit exists locally")
 		return location, nil
 	}
 
