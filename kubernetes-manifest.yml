@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cfstate
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cfstate
+            image: craigjames16/cfstate:latest
+            imagePullPolicy: IfNotPresent
+            command:
+            - cfstate
+            - check
+          restartPolicy: OnFailure

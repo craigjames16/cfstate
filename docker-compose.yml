@@ -1,0 +1,10 @@
+services:
+  cfstate:
+    build: .
+    environment:
+      GITHUB_ACCESS_TOKEN: ${GITHUB_ACCESS_TOKEN}
+      CFSTATE_BACKEND: s3
+      CFSTATE_STATE_FILE_NAME: state
+      CFSTATE_BUCKET_NAME: ${CFSTATE_BUCKET_NAME}
+    volumes:
+      - "/home/craigjames/.aws:/root/.aws"
