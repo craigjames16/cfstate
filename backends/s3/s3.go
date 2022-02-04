@@ -28,21 +28,26 @@ func init() {
 		sExist bool
 	)
 
-	sess := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String("ca-central-1"),
-	}))
+	if os.Getenv("CFSTATE_BACKEND") == "s3" {
+		sess, err := session.NewSession(&aws.Config{
+			Region: aws.String("ca-central-1"),
+		})
+		if err != nil {
+			panic(err)
+		}
 
-	S3Service = s3.New(sess)
+		S3Service = s3.New(sess)
 
-	S3Uploader = s3manager.NewUploader(sess)
+		S3Uploader = s3manager.NewUploader(sess)
 
-	S3Downloader = s3manager.NewDownloader(sess)
+		S3Downloader = s3manager.NewDownloader(sess)
 
-	BUCKET_NAME, bExist = os.LookupEnv("CFSTATE_BUCKET_NAME")
-	STATE_FILE_NAME, sExist = os.LookupEnv("CFSTATE_STATE_FILE_NAME")
+		BUCKET_NAME, _ = os.LookupEnv("CFSTATE_BUCKET_NAME")
+		STATE_FILE_NAME, _ = os.LookupEnv("CFSTATE_STATE_FILE_NAME")
 
-	if !bExist || !sExist {
-		panic(fmt.Errorf("CFSTATE_BUCKET_NAME or CFSTATE_STATE_FILE_NAME not set"))
+		if !bExist || !sExist {
+			panic(fmt.Errorf("CFSTATE_BUCKET_NAME or CFSTATE_STATE_FILE_NAME not set"))
+		}
 	}
 }
 
@@ -55,7 +60,7 @@ func (s3b S3Backend) UpdateState(stateFile []byte) (err error) {
 		now                time.Time = time.Now()
 		sec                int64     = now.Unix()
 		stateFileName      string    = fmt.Sprintf("./%s.json", STATE_FILE_NAME)
-		savedStateFileName string    = fmt.Sprintf("./prev_states/state-%d.json", sec)
+		savedStateFileName string    = fmt.Sprintf("./prev_states/%s-%d.json", STATE_FILE_NAME, sec)
 	)
 
 	if _, err = S3Service.CopyObject(&s3.CopyObjectInput{
